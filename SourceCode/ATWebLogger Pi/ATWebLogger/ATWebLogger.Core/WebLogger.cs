@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net.NetworkInformation;
 using System.Threading;
 using System.Threading.Tasks;
@@ -64,8 +65,8 @@ namespace ATWebLogger.Core
         public Locations Locations { get; set; }
         public Alarms Alarms { get; set; }
 
-        //public string PathFile = $"D:\\ATPro\\CodeProject\\GatewayPi\\WeblogMVC\\SourceCode\\";
-        public string PathFile = @"C:\GatewayParametters\";
+        public string PathFile = $"D:\\ATPro\\CodeProject\\GatewayPi\\WeblogMVC\\SourceCode\\";
+        //public string PathFile = $"C:\\GatewayParametters\\";
         //public string PathFile = $"/home/pi/";
 
         public double VotLo = 5;
@@ -81,6 +82,8 @@ namespace ATWebLogger.Core
 
         private double readValueNew = 0;//chứa giá trị mới đọc về từ modbus
 
+        private List<OnOffSerienModel> _onOffSerienAlarm = new List<OnOffSerienModel>();
+        private int _serienDeviceAdd = 1;//ID cuar thiết bị báo còi
         #endregion
 
         #region Constructors
@@ -213,6 +216,20 @@ namespace ATWebLogger.Core
             Locations.GetAll();
             Console.WriteLine($"Lấy danh sách location thành công: {Locations.Count}");
 
+            //cong.nguyen Update 20230730
+            if (Locations.Count > 0)
+            {
+                foreach (var item in Locations)
+                {
+                    _onOffSerienAlarm.Add(new OnOffSerienModel()
+                    {
+                        LocationName = item.Name,
+                        OnOff = 0,
+                        OnOffFlag = false
+                    });
+                }
+            }
+
             Console.WriteLine("Khởi tạo USB3G");
             GateWay.SMS.Port_USB3G = ReadText(PathFile + "comSMS.txt");
             //GateWay.SMS.Port_USB3G = "COM12";
@@ -343,6 +360,13 @@ namespace ATWebLogger.Core
                     {
                         if (location.State == "Enable")
                         {
+                            var l = _onOffSerienAlarm.FirstOrDefault(x => x.LocationName == location.Name);
+
+                            if (l.OnOff == 0 && l.OnOffFlag == false)
+                            {
+                            
+                            }
+
                             bool success = false;
                             int count = 0;
                             ushort address = (ushort)location.MemoryAddress;
@@ -734,6 +758,7 @@ namespace ATWebLogger.Core
                                         if (EnableEmailAlarm)
                                         {
                                             SendAlarmEmail("High Alarm", location);
+
                                         }
 
                                         if (EnableSMSAlarm)
@@ -741,6 +766,12 @@ namespace ATWebLogger.Core
                                             //UpdateSMSTable($"LocationName='KC Tu 1',Type='High Alarm',Value={value},LowLevel={location.LowLevel},HighLevel={location.HighLevel},Flag=100", 1);
                                             SendAlarmSMS("High Alarm", location);
                                         }
+
+                                        //update 20230730 - bat tin hieu ghi canh bao
+                                        var l = _onOffSerienAlarm.FirstOrDefault(x => x.LocationName == location.Name);
+                                        l.OnOff = 1;
+                                        l.OnOffFlag = false;
+                                        l.AlarmType = "Hight Alarm";
 
                                         Debug.WriteLine("Hight Alarm");
                                     }
@@ -783,6 +814,11 @@ namespace ATWebLogger.Core
                                         {
                                             SendAlarmSMS("Low Alarm", location);
                                         }
+                                        //update 20230730 - bat tin hieu ghi canh bao
+                                        var l = _onOffSerienAlarm.FirstOrDefault(x => x.LocationName == location.Name);
+                                        l.OnOff = 1;
+                                        l.AlarmType = "Low Alarm";
+
                                         Debug.WriteLine("Low Alarm");
                                     }
                                     else
@@ -824,6 +860,11 @@ namespace ATWebLogger.Core
                                         {
                                             SendAlarmSMS("Normal Alarm", location);
                                         }
+
+                                        //update 20230730 - bat tin hieu ghi canh bao
+                                        var l = _onOffSerienAlarm.FirstOrDefault(x => x.LocationName == location.Name);
+                                        l.OnOff = 0;
+                                        l.AlarmType = "Normal";
 
                                         Debug.WriteLine("Normal");
                                     }
@@ -1899,5 +1940,13 @@ namespace ATWebLogger.Core
             Buffer[Pos + 1] = (byte)(Value & 0x00FF);
         }
         #endregion
+    }
+
+    public class OnOffSerienModel
+    {
+        public string LocationName { get; set; }
+        public int OnOff { get; set; } = 0;
+        public bool OnOffFlag { get; set; } = false;
+        public string AlarmType { get; set; } = string.Empty;
     }
 }
