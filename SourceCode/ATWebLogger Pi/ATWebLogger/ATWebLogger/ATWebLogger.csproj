@@ -55,6 +55,9 @@
       <HintPath>..\packages\MySql.Data.6.10.9\lib\net452\MySql.Data.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
+    <Reference Include="snap7.net">
+      <HintPath>..\..\..\..\..\2021BenhVienDHYD\dllPLCPi\snap7.net.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel" />
     <Reference Include="System.Configuration.Install" />
