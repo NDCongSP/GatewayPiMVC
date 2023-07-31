@@ -97,11 +97,11 @@ namespace ATWebLogger.Core
             EmailFromInfo.PassEmailFrom = EncodeMD5.DecryptString(_data[1], "PTAut0mation");
             EmailFromInfo.Subject = _data[2];
 
-            Console.WriteLine($"User: {EmailFromInfo.UserEmailFrom} | Pass: {EmailFromInfo.PassEmailFrom} | Subject: {EmailFromInfo.Subject}");
+            Debug.WriteLine($"User: {EmailFromInfo.UserEmailFrom} | Pass: {EmailFromInfo.PassEmailFrom} | Subject: {EmailFromInfo.Subject}");
 
             #region Read MACID & parameters of ModbusRTU comunication
 
-            Console.WriteLine("Bắt đầu đọc thông số modbus");
+            Debug.WriteLine("Bắt đầu đọc thông số modbus");
             string dataParams = ReadText(PathFile + "Parametter.txt").Trim();
             //string dataParams = "MacAdd:" + "test" + "|Port:" + "COM2" + "|Baudrate:" + "9600"
             //    + "|DataBit:" + "8" + "|Parity:" + "0" + "|Stopbit:" + "1"
@@ -117,7 +117,7 @@ namespace ATWebLogger.Core
             Stopbits = int.Parse(prams[5].Split(':')[1].Trim());
             Timeout = int.Parse(prams[6].Split(':')[1].Trim());
 
-            Console.WriteLine($"MacId:{MACID}/Port:{PortName}/Baudrate:{BaudRate}/Databits:{DataBits}/Parity:{Parity}/StopBit:{Stopbits}/Timeout:{Timeout}");
+            Debug.WriteLine($"MacId:{MACID}/Port:{PortName}/Baudrate:{BaudRate}/Databits:{DataBits}/Parity:{Parity}/StopBit:{Stopbits}/Timeout:{Timeout}");
             #endregion
 
             #region Read Password, Email, SMS settings
@@ -130,15 +130,15 @@ namespace ATWebLogger.Core
             //SMSString = "0909167655,‭0909167655,0909167655";
             //EmailString = "ndcong08cddv02@gmail.com";
             Debug.WriteLine($"sms {SMSString} | Email {EmailString}");
-            Console.WriteLine($"SMS: {SMSString}");
-            Console.WriteLine($"Email: {EmailString}");
+            Debug.WriteLine($"SMS: {SMSString}");
+            Debug.WriteLine($"Email: {EmailString}");
 
             string temp = ReadText(PathFile + "enableSMSEmail.txt");
             prams = temp.Split(',');
             //string temp = "True" + "," + "True" + "," + "Databases" + "," + "60" + "," + ServerIpAddress;
             //prams = temp.Split(',');
 
-            Console.WriteLine($"EnableSMS/EnableEmail/LogType/LogRate/ServerIp: {temp}");
+            Debug.WriteLine($"EnableSMS/EnableEmail/LogType/LogRate/ServerIp: {temp}");
 
             EnableSMSAlarm = Convert.ToBoolean(prams[0]);
             EnableEmailAlarm = Convert.ToBoolean(prams[1]);
@@ -149,12 +149,12 @@ namespace ATWebLogger.Core
             #endregion
 
             #region Read countAlarm setting
-            Console.WriteLine("Bắt đầu đọc thông số countAlarm setting");
+            Debug.WriteLine("Bắt đầu đọc thông số countAlarm setting");
 
             countAlarm = Convert.ToInt16(ReadText(PathFile + "countAlarm.txt").Trim().Split('|')[0]);
             VotLo = Convert.ToDouble(ReadText(PathFile + "countAlarm.txt").Trim().Split('|')[1]);
 
-            Console.WriteLine($"Count Alarm Settinf {countAlarm}");
+            Debug.WriteLine($"Count Alarm Settinf {countAlarm}");
             //string dataParams = "MacAdd:" + "test" + "|Port:" + "COM2" + "|Baudrate:" + "9600"
             //    + "|DataBit:" + "8" + "|Parity:" + "0" + "|Stopbit:" + "1"
             //    + "|TimeOut:" + "1000";
@@ -166,13 +166,13 @@ namespace ATWebLogger.Core
             CoreData.Universal.DataTableName = DataTableName;
             CoreData.Universal.LocationTableName = LocationTableName;
 
-            Console.WriteLine("Khởi tạo PLC Pi");
+            Debug.WriteLine("Khởi tạo PLC Pi");
             try
             {
                 GateWay = new PLCPi();
             }
             catch (Exception ex) { }
-            Console.WriteLine("Khởi tạo PLC Pi thành công");
+            Debug.WriteLine("Khởi tạo PLC Pi thành công");
 
             #region Đồng bộ giờ
 
@@ -187,12 +187,12 @@ namespace ATWebLogger.Core
                 connection.Dispose();
                 if (TimeNow != "" && TimeNow != null)
                 {
-                    Console.WriteLine("Đồng bộ thời gian thành công" + Convert.ToDateTime(TimeNow).ToString("dd-MM-yyyy HH:mm:ss"));
+                    Debug.WriteLine("Đồng bộ thời gian thành công" + Convert.ToDateTime(TimeNow).ToString("dd-MM-yyyy HH:mm:ss"));
                     GateWay.ThoiGian.CaiDat(Convert.ToDateTime(TimeNow).ToString("dd-MM-yyyy HH:mm:ss"));
 
                 }
             }
-            catch (Exception ex) { Console.WriteLine("Lỗi đồng bộ thời gian"); Console.WriteLine(ex.Message); }
+            catch (Exception ex) { Debug.WriteLine("Lỗi đồng bộ thời gian"); Debug.WriteLine(ex.Message); }
 
             #endregion
 
@@ -204,17 +204,17 @@ namespace ATWebLogger.Core
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Lỗi tạo bảng");
-                Console.WriteLine(ex.Message);
+                Debug.WriteLine("Lỗi tạo bảng");
+                Debug.WriteLine(ex.Message);
             }
 
             #endregion
 
             //Khởi tạo 3G
-            Console.WriteLine("Lấy danh sách location");
+            Debug.WriteLine("Lấy danh sách location");
             Locations = new Locations();
             Locations.GetAll();
-            Console.WriteLine($"Lấy danh sách location thành công: {Locations.Count}");
+            Debug.WriteLine($"Lấy danh sách location thành công: {Locations.Count}");
 
             //cong.nguyen Update 20230730
             if (Locations.Count > 0)
@@ -230,17 +230,19 @@ namespace ATWebLogger.Core
                 }
             }
 
-            Console.WriteLine("Khởi tạo USB3G");
-            GateWay.SMS.Port_USB3G = ReadText(PathFile + "comSMS.txt");
-            //GateWay.SMS.Port_USB3G = "COM12";
-            //GateWay.SMS.Khoitao();
-            Console.WriteLine($"Com SMS {GateWay.SMS.Port_USB3G}| Khoi Tao {GateWay.SMS.Khoitao()}");
-            Console.WriteLine("Khởi tạo USB3G thành công");
+            Debug.WriteLine("Khởi tạo USB3G");
+
+            //GateWay.SMS.Port_USB3G = ReadText(PathFile + "comSMS.txt");
+            ////GateWay.SMS.Port_USB3G = "COM12";
+            ////GateWay.SMS.Khoitao();
+            //Debug.WriteLine($"Com SMS {GateWay.SMS.Port_USB3G}| Khoi Tao {GateWay.SMS.Khoitao()}");
+            //Debug.WriteLine("Khởi tạo USB3G thành công");
 
             //GateWay.SMS.GuiSMS(SMSString, "Gui SMS test khi khoi tao");
 
-            Console.WriteLine("Khởi tạo Modbus RTU Master");
-            GateWay.ModbusRTUMaster.ResponseTimeout = 1000;
+            Debug.WriteLine("Khởi tạo Modbus RTU Master");
+            GateWay.ModbusRTUMaster.ResponseTimeout = 5000;
+
             //Khởi tạo modbus
             if (GateWay.ModbusRTUMaster.KetNoi(
                 PortName,
@@ -249,11 +251,11 @@ namespace ATWebLogger.Core
                 (System.IO.Ports.Parity)(Parity),
                 (System.IO.Ports.StopBits)(Stopbits)))
             {
-                Console.WriteLine("Khởi tạo Modbus RTU Master thành công");
+                Debug.WriteLine("Khởi tạo Modbus RTU Master thành công");
             }
             else
             {
-                Console.WriteLine("Khởi tạo Modbus RTU Master thất bại");
+                Debug.WriteLine("Khởi tạo Modbus RTU Master thất bại");
             }
 
             //Mệt quá ngủ 1s dậy làm tiếp
@@ -267,7 +269,7 @@ namespace ATWebLogger.Core
             logTimer.Elapsed += LogTimer_Elapsed;
             logTimer.Start();
 
-            Console.WriteLine("Khởi tạo AT-Web/Logger hoàn tất");
+            Debug.WriteLine("Khởi tạo AT-Web/Logger hoàn tất");
         }
 
         #endregion
@@ -360,12 +362,54 @@ namespace ATWebLogger.Core
                     {
                         if (location.State == "Enable")
                         {
-                            var l = _onOffSerienAlarm.FirstOrDefault(x => x.LocationName == location.Name);
+                            OnOffSerienModel rowSelect = _onOffSerienAlarm.FirstOrDefault(x => x.LocationName == location.Name);
 
-                            if (l.OnOff == 0 && l.OnOffFlag == false)
+                            if (rowSelect.OnOff == 1 && rowSelect.OnOffFlag == false)
                             {
-                            
+                                var writeData = new WriteValueCoreModel()
+                                {
+                                    DeviceId = _serienDeviceAdd,
+                                    Address = 40009,
+                                    DataType = "Word",
+                                    Value = 1
+                                };
+
+                                if (WriteValue(writeData.DeviceId, writeData.Address, writeData.DataType, writeData.Value) == "Ok")
+                                {
+                                    rowSelect.OnOffFlag = true;
+                                    Debug.WriteLine($"On serien alarm successful.");
+                                }
+                                else
+                                {
+                                    Debug.WriteLine($"On serien alarm fail.");
+                                }
+
+                                Thread.Sleep(500);
                             }
+                            else if (rowSelect.OnOff == 0 && rowSelect.OnOffFlag == true)
+                            {
+                                var writeData = new WriteValueCoreModel()
+                                {
+                                    DeviceId = _serienDeviceAdd,
+                                    Address = 40009,
+                                    DataType = "Word",
+                                    Value = 0
+                                };
+
+                                if (WriteValue(writeData.DeviceId, writeData.Address, writeData.DataType, writeData.Value) == "Ok")
+                                {
+                                    rowSelect.OnOffFlag = false;
+                                    Debug.WriteLine($"Off serien alarm successful.");
+                                }
+                                else
+                                {
+                                    Debug.WriteLine($"Off serien alarm fail.");
+                                }
+
+                                Thread.Sleep(500);
+                            }
+
+                            Debug.WriteLine($"trang thai alarm: {rowSelect.LocationName}-{rowSelect.OnOff}-{rowSelect.OnOffFlag}-{rowSelect.AlarmType}");
 
                             bool success = false;
                             int count = 0;
@@ -685,7 +729,7 @@ namespace ATWebLogger.Core
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Lỗi đọc modbus: {ex.Message}");
+                        Debug.WriteLine($"Lỗi đọc modbus: {ex.Message}");
                     }
                     Thread.Sleep(500);
                 }
@@ -726,7 +770,6 @@ namespace ATWebLogger.Core
                     {
                         if (location.State == "Enable" && !string.IsNullOrEmpty(location.Value) && location.Value != "null" && location.Status == "Good")
                         {
-
                             DateTime CurrentTime = DateTime.Now;
                             double deadband = location.Deadband ?? 0;
                             if (double.TryParse(location.Value, out double value))
@@ -768,7 +811,7 @@ namespace ATWebLogger.Core
                                         }
 
                                         //update 20230730 - bat tin hieu ghi canh bao
-                                        var l = _onOffSerienAlarm.FirstOrDefault(x => x.LocationName == location.Name);
+                                        OnOffSerienModel l = _onOffSerienAlarm.FirstOrDefault(x => x.LocationName == location.Name);
                                         l.OnOff = 1;
                                         l.OnOffFlag = false;
                                         l.AlarmType = "Hight Alarm";
@@ -815,7 +858,7 @@ namespace ATWebLogger.Core
                                             SendAlarmSMS("Low Alarm", location);
                                         }
                                         //update 20230730 - bat tin hieu ghi canh bao
-                                        var l = _onOffSerienAlarm.FirstOrDefault(x => x.LocationName == location.Name);
+                                        OnOffSerienModel l = _onOffSerienAlarm.FirstOrDefault(x => x.LocationName == location.Name);
                                         l.OnOff = 1;
                                         l.AlarmType = "Low Alarm";
 
@@ -862,7 +905,7 @@ namespace ATWebLogger.Core
                                         }
 
                                         //update 20230730 - bat tin hieu ghi canh bao
-                                        var l = _onOffSerienAlarm.FirstOrDefault(x => x.LocationName == location.Name);
+                                        OnOffSerienModel l = _onOffSerienAlarm.FirstOrDefault(x => x.LocationName == location.Name);
                                         l.OnOff = 0;
                                         l.AlarmType = "Normal";
 
@@ -879,7 +922,7 @@ namespace ATWebLogger.Core
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Lỗi đọc alarm: {ex.Message}");
+                        Debug.WriteLine($"Lỗi đọc alarm: {ex.Message}");
                     }
                 }
                 Thread.Sleep(100);
@@ -1059,7 +1102,7 @@ namespace ATWebLogger.Core
         //            }
         //            catch (Exception ex)
         //            {
-        //                Console.WriteLine($"Lỗi đọc alarm: {ex.Message}");
+        //                Debug.WriteLine($"Lỗi đọc alarm: {ex.Message}");
         //            }
         //        }
         //    }
@@ -1330,7 +1373,7 @@ namespace ATWebLogger.Core
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Lỗi đọc modbus: {ex.Message}");
+                    Debug.WriteLine($"Lỗi đọc modbus: {ex.Message}");
                 }
                 Thread.Sleep(500);
             }
@@ -1357,17 +1400,17 @@ namespace ATWebLogger.Core
 
                 if (GateWay.Email.Error == false)
                 {
-                    Console.WriteLine($"Gui Email Good");
+                    Debug.WriteLine($"Gui Email Good");
                 }
                 else
                 {
-                    Console.WriteLine($"Gui Email Fail");
+                    Debug.WriteLine($"Gui Email Fail");
                 }
 
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Lỗi gửi Email : {ex.Message}");
+                Debug.WriteLine($"Lỗi gửi Email : {ex.Message}");
             }
         }
 
@@ -1378,7 +1421,7 @@ namespace ATWebLogger.Core
                 string noidung = $"[{EmailFromInfo.Subject}]\n{DateTime.Now}\nLocation: {location.Name}\nAlarm: {alarm}\nValue: {location.Value}" +
                     $"\nLow Level: {(location.LowLevel.HasValue ? location.LowLevel.Value.ToString() : "")}" +
                     $"\nHigh Level: {(location.HighLevel.HasValue ? location.HighLevel.Value.ToString() : "")}";
-                Console.WriteLine($"SMS {noidung}");
+                Debug.WriteLine($"SMS {noidung}");
                 //for (int j = 0; j < SMSString.Split(',').Length; j++)
                 //{
                 //    //GateWay.SMS.GuiSMS(SMSString.Split(',')[j], noidung);
@@ -1386,13 +1429,13 @@ namespace ATWebLogger.Core
                 //    Thread.Sleep(2000);
                 //}
 
-                Console.WriteLine($"SDT {SMSString}");
-                Console.WriteLine($"Gui SMS {GateWay.SMS.GuiSMS(SMSString, noidung)}");
-                Console.WriteLine($"-----------------------------------------------------");
+                Debug.WriteLine($"SDT {SMSString}");
+                Debug.WriteLine($"Gui SMS {GateWay.SMS.GuiSMS(SMSString, noidung)}");
+                Debug.WriteLine($"-----------------------------------------------------");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Lỗi gửi tin SMS : {ex.Message}");
+                Debug.WriteLine($"Lỗi gửi tin SMS : {ex.Message}");
             }
         }
 
@@ -1483,7 +1526,14 @@ namespace ATWebLogger.Core
                         case "InputRegister":
                             break;
                         case "HoldingRegister":
-                            result = GateWay.ModbusRTUMaster.WriteHoldingRegisters((byte)deviceId, (ushort)address, (ushort)(size / 2), buffer);
+                            if (size ==2)
+                            {
+                                result = GateWay.ModbusRTUMaster.WriteHoldingRegister((byte)deviceId, (ushort)address, buffer);
+                            }
+                            else
+                            {
+                                result = GateWay.ModbusRTUMaster.WriteHoldingRegisters((byte)deviceId, (ushort)address, (ushort)(size / 2), buffer);
+                            }
                             break;
                         default:
                             break;
@@ -1524,7 +1574,7 @@ namespace ATWebLogger.Core
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Lỗi ghi giá trị: {ex.Message}");
+                Debug.WriteLine($"Lỗi ghi giá trị: {ex.Message}");
                 return "Failed";
             }
 
@@ -1689,7 +1739,7 @@ namespace ATWebLogger.Core
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Lỗi đọc giá trị: {ex.Message}");
+                Debug.WriteLine($"Lỗi đọc giá trị: {ex.Message}");
                 return "Failed";
             }
         }
@@ -1729,7 +1779,7 @@ namespace ATWebLogger.Core
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Lỗi ghi giá trị TMS: {ex.Message}");
+                Debug.WriteLine($"Lỗi ghi giá trị TMS: {ex.Message}");
                 return "Failed";
             }
         }
@@ -1780,7 +1830,7 @@ namespace ATWebLogger.Core
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Lỗi đọc giá trị TMS: {ex.Message}");
+                Debug.WriteLine($"Lỗi đọc giá trị TMS: {ex.Message}");
                 return "Failed";
             }
         }
@@ -1948,5 +1998,13 @@ namespace ATWebLogger.Core
         public int OnOff { get; set; } = 0;
         public bool OnOffFlag { get; set; } = false;
         public string AlarmType { get; set; } = string.Empty;
+    }
+
+    public class WriteValueCoreModel
+    {
+        public int DeviceId { get; set; }
+        public string DataType { get; set; }
+        public int Address { get; set; }
+        public double Value { get; set; }
     }
 }

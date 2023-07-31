@@ -44,9 +44,12 @@
     </Reference>
     <Reference Include="PLCPi, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\..\PLCPi Project\PLCPiForPC\PLCPi\PLCPi\bin\Debug\PLCPi.dll</HintPath>
+      <HintPath>..\..\..\..\..\2014PLCPiProject\PLCPiForPC\PLCPi\PLCPi\bin\Debug\PLCPi.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
+    <Reference Include="snap7.net">
+      <HintPath>..\..\..\..\..\2021BenhVienDHYD\dllPLCPi\snap7.net.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
