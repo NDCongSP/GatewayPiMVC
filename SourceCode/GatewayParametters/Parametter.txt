@@ -1,1 +1,1 @@
-MacAdd:congpc|Port:COM11|Baudrate:9600|DataBit:8|Parity:0|Stopbit:1|TimeOut:1000
+MacAdd:congpc|Port:COM7|Baudrate:9600|DataBit:8|Parity:0|Stopbit:1|TimeOut:10000|IdAddressSiren:2|HoldingSiren:40009

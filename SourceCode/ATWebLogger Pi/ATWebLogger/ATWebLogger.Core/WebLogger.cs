@@ -66,8 +66,8 @@ namespace ATWebLogger.Core
         public Alarms Alarms { get; set; }
 
         //public string PathFile = $"D:\\ATPro\\CodeProject\\GatewayPi\\WeblogMVC\\SourceCode\\";
-        public string PathFile = $"C:\\GatewayParametters\\";
-        //public string PathFile = $"/home/pi/";
+        //public string PathFile = $"C:\\GatewayParametters\\";
+        public string PathFile = $"/home/pi/";
 
         public double VotLo = 5;
         public FromEmailInfo EmailFromInfo = new FromEmailInfo();
@@ -82,8 +82,11 @@ namespace ATWebLogger.Core
 
         private double readValueNew = 0;//chứa giá trị mới đọc về từ modbus
 
-        private List<OnOffSerienModel> _onOffSerienAlarm = new List<OnOffSerienModel>();
-        private int _serienDeviceAdd = 1;//ID cuar thiết bị báo còi
+        private List<OnOffSirenModel> _onOffSirenAlarm = new List<OnOffSirenModel>();
+        private int _sirenDeviceAdd = 1;//ID cuar thiết bị báo còi
+        private int _holdingRegisterSiren = 40001;
+        private bool _allLocationsNormal = true;
+        private int _countNormal = 0;
         #endregion
 
         #region Constructors
@@ -116,6 +119,8 @@ namespace ATWebLogger.Core
             Parity = int.Parse(prams[4].Split(':')[1].Trim());
             Stopbits = int.Parse(prams[5].Split(':')[1].Trim());
             Timeout = int.Parse(prams[6].Split(':')[1].Trim());
+            _sirenDeviceAdd = int.Parse(prams[7].Split(':')[1].Trim());
+            _holdingRegisterSiren = int.Parse(prams[8].Split(':')[1].Trim());
 
             Debug.WriteLine($"MacId:{MACID}/Port:{PortName}/Baudrate:{BaudRate}/Databits:{DataBits}/Parity:{Parity}/StopBit:{Stopbits}/Timeout:{Timeout}");
             #endregion
@@ -221,7 +226,7 @@ namespace ATWebLogger.Core
             {
                 foreach (var item in Locations)
                 {
-                    _onOffSerienAlarm.Add(new OnOffSerienModel()
+                    _onOffSirenAlarm.Add(new OnOffSirenModel()
                     {
                         LocationName = item.Name,
                         OnOff = 0,
@@ -241,7 +246,7 @@ namespace ATWebLogger.Core
             //GateWay.SMS.GuiSMS(SMSString, "Gui SMS test khi khoi tao");
 
             Debug.WriteLine("Khởi tạo Modbus RTU Master");
-            GateWay.ModbusRTUMaster.ResponseTimeout = 5000;
+            GateWay.ModbusRTUMaster.ResponseTimeout = Timeout;
 
             //Khởi tạo modbus
             if (GateWay.ModbusRTUMaster.KetNoi(
@@ -362,21 +367,21 @@ namespace ATWebLogger.Core
                     {
                         if (location.State == "Enable")
                         {
-                            OnOffSerienModel rowSelect = _onOffSerienAlarm.FirstOrDefault(x => x.LocationName == location.Name);
+                            OnOffSirenModel locationAlarm = _onOffSirenAlarm.FirstOrDefault(x => x.LocationName == location.Name);
 
-                            if (rowSelect.OnOff == 1 && rowSelect.OnOffFlag == false)
+                            if (locationAlarm.OnOff == 1 && locationAlarm.OnOffFlag == false)
                             {
                                 var writeData = new WriteValueCoreModel()
                                 {
-                                    DeviceId = _serienDeviceAdd,
-                                    Address = 40009,
+                                    DeviceId = _sirenDeviceAdd,
+                                    Address = _holdingRegisterSiren,
                                     DataType = "Word",
                                     Value = 1
                                 };
 
                                 if (WriteValue(writeData.DeviceId, writeData.Address, writeData.DataType, writeData.Value) == "Ok")
                                 {
-                                    rowSelect.OnOffFlag = true;
+                                    locationAlarm.OnOffFlag = true;
                                     Debug.WriteLine($"On serien alarm successful.");
                                 }
                                 else
@@ -386,30 +391,47 @@ namespace ATWebLogger.Core
 
                                 Thread.Sleep(500);
                             }
-                            else if (rowSelect.OnOff == 0 && rowSelect.OnOffFlag == true)
+                            else if (locationAlarm.OnOff == 0 && locationAlarm.OnOffFlag == true)
                             {
-                                var writeData = new WriteValueCoreModel()
-                                {
-                                    DeviceId = _serienDeviceAdd,
-                                    Address = 40009,
-                                    DataType = "Word",
-                                    Value = 0
-                                };
 
-                                if (WriteValue(writeData.DeviceId, writeData.Address, writeData.DataType, writeData.Value) == "Ok")
+                                _countNormal = 0;
+                                foreach (var item in _onOffSirenAlarm)
                                 {
-                                    rowSelect.OnOffFlag = false;
-                                    Debug.WriteLine($"Off serien alarm successful.");
+                                    if (item.AlarmType == "Normal")
+                                    {
+                                        _countNormal += 1;
+                                    }
+                                }
+
+                                if (_countNormal == _onOffSirenAlarm.Count)
+                                {
+                                    var writeData = new WriteValueCoreModel()
+                                    {
+                                        DeviceId = _sirenDeviceAdd,
+                                        Address = _holdingRegisterSiren,
+                                        DataType = "Word",
+                                        Value = 0
+                                    };
+
+                                    if (WriteValue(writeData.DeviceId, writeData.Address, writeData.DataType, writeData.Value) == "Ok")
+                                    {
+                                        locationAlarm.OnOffFlag = true;
+                                        Debug.WriteLine($"Off serien alarm successful.");
+                                    }
+                                    else
+                                    {
+                                        Debug.WriteLine($"Off serien alarm fail.");
+                                    }
+
+                                    Thread.Sleep(500);
                                 }
                                 else
                                 {
-                                    Debug.WriteLine($"Off serien alarm fail.");
+                                    locationAlarm.OnOffFlag = false;
                                 }
-
-                                Thread.Sleep(500);
                             }
 
-                            Debug.WriteLine($"trang thai alarm: {rowSelect.LocationName}-{rowSelect.OnOff}-{rowSelect.OnOffFlag}-{rowSelect.AlarmType}");
+                            Debug.WriteLine($"trang thai alarm: {locationAlarm.LocationName}-{locationAlarm.OnOff}-{locationAlarm.OnOffFlag}-{locationAlarm.AlarmType}");
 
                             bool success = false;
                             int count = 0;
@@ -762,6 +784,24 @@ namespace ATWebLogger.Core
 
         private void ReadAlarmLocations()
         {
+            //tat siren ban dau
+            var writeData = new WriteValueCoreModel()
+            {
+                DeviceId = _sirenDeviceAdd,
+                Address = _holdingRegisterSiren,
+                DataType = "Word",
+                Value = 0
+            };
+
+            if (WriteValue(writeData.DeviceId, writeData.Address, writeData.DataType, writeData.Value) == "Ok")
+            {
+                Debug.WriteLine($"Off serien when startup successful.");
+            }
+            else
+            {
+                Debug.WriteLine($"Off serien when startup fail.");
+            }
+
             while (true)
             {
                 foreach (var location in Locations)
@@ -811,7 +851,7 @@ namespace ATWebLogger.Core
                                         }
 
                                         //update 20230730 - bat tin hieu ghi canh bao
-                                        OnOffSerienModel l = _onOffSerienAlarm.FirstOrDefault(x => x.LocationName == location.Name);
+                                        OnOffSirenModel l = _onOffSirenAlarm.FirstOrDefault(x => x.LocationName == location.Name);
                                         l.OnOff = 1;
                                         l.OnOffFlag = false;
                                         l.AlarmType = "Hight Alarm";
@@ -858,7 +898,7 @@ namespace ATWebLogger.Core
                                             SendAlarmSMS("Low Alarm", location);
                                         }
                                         //update 20230730 - bat tin hieu ghi canh bao
-                                        OnOffSerienModel l = _onOffSerienAlarm.FirstOrDefault(x => x.LocationName == location.Name);
+                                        OnOffSirenModel l = _onOffSirenAlarm.FirstOrDefault(x => x.LocationName == location.Name);
                                         l.OnOff = 1;
                                         l.AlarmType = "Low Alarm";
 
@@ -905,7 +945,7 @@ namespace ATWebLogger.Core
                                         }
 
                                         //update 20230730 - bat tin hieu ghi canh bao
-                                        OnOffSerienModel l = _onOffSerienAlarm.FirstOrDefault(x => x.LocationName == location.Name);
+                                        OnOffSirenModel l = _onOffSirenAlarm.FirstOrDefault(x => x.LocationName == location.Name);
                                         l.OnOff = 0;
                                         l.AlarmType = "Normal";
 
@@ -924,6 +964,7 @@ namespace ATWebLogger.Core
                     {
                         Debug.WriteLine($"Lỗi đọc alarm: {ex.Message}");
                     }
+
                 }
                 Thread.Sleep(100);
             }
@@ -1526,7 +1567,7 @@ namespace ATWebLogger.Core
                         case "InputRegister":
                             break;
                         case "HoldingRegister":
-                            if (size ==2)
+                            if (size == 2)
                             {
                                 result = GateWay.ModbusRTUMaster.WriteHoldingRegister((byte)deviceId, (ushort)address, buffer);
                             }
@@ -1556,7 +1597,14 @@ namespace ATWebLogger.Core
                                 case "InputRegister":
                                     break;
                                 case "HoldingRegister":
-                                    result = GateWay.ModbusRTUMaster.WriteHoldingRegisters((byte)deviceId, (ushort)address, (ushort)(size / 2), buffer);
+                                    if (size == 2)
+                                    {
+                                        result = GateWay.ModbusRTUMaster.WriteHoldingRegister((byte)deviceId, (ushort)address, buffer);
+                                    }
+                                    else
+                                    {
+                                        result = GateWay.ModbusRTUMaster.WriteHoldingRegisters((byte)deviceId, (ushort)address, (ushort)(size / 2), buffer);
+                                    }
                                     break;
                                 default:
                                     break;
@@ -1992,7 +2040,7 @@ namespace ATWebLogger.Core
         #endregion
     }
 
-    public class OnOffSerienModel
+    public class OnOffSirenModel
     {
         public string LocationName { get; set; }
         public int OnOff { get; set; } = 0;
