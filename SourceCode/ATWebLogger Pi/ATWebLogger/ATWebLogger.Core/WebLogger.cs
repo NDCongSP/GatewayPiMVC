@@ -425,10 +425,9 @@ namespace ATWebLogger.Core
 
                                     Thread.Sleep(500);
                                 }
-                                else
-                                {
-                                    locationAlarm.OnOffFlag = false;
-                                }
+
+                                locationAlarm.OnOffFlag = false;
+
                             }
 
                             Console.WriteLine($"trang thai alarm: {locationAlarm.LocationName}-{locationAlarm.OnOff}-{locationAlarm.OnOffFlag}-{locationAlarm.AlarmType}");
@@ -2045,7 +2044,7 @@ namespace ATWebLogger.Core
         public string LocationName { get; set; }
         public int OnOff { get; set; } = 0;
         public bool OnOffFlag { get; set; } = false;
-        public string AlarmType { get; set; } = string.Empty;
+        public string AlarmType { get; set; } = "Normal";
     }
 
     public class WriteValueCoreModel
