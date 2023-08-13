@@ -1992,7 +1992,7 @@ namespace ATWebLogger.Core
 
             string modbusRTUString = "MacAdd:" + MACID + "|Port:" + PortName + "|Baudrate:" + BaudRate.ToString()
                 + "|DataBit:" + DataBits.ToString() + "|Parity:" + Parity.ToString() + "|Stopbit:" + Stopbits.ToString()
-                + "|TimeOut:" + Timeout.ToString();
+                + "|TimeOut:" + Timeout.ToString()+ $"|IdAddressSiren:{_sirenDeviceAdd}|HoldingSiren:{_holdingRegisterSiren}";
             WriteText(modbusRTUString.Trim(), PathFile + "Parametter.txt");
 
         }
