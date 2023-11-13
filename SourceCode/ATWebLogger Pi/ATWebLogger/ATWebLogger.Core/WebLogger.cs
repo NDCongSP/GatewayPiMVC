@@ -85,6 +85,7 @@ namespace ATWebLogger.Core
         private List<OnOffSirenModel> _onOffSirenAlarm = new List<OnOffSirenModel>();
         private int _sirenDeviceAdd = 1;//ID cuar thiết bị báo còi
         private int _holdingRegisterSiren = 40001;
+        private string _dataTypeAlarm = "Word";
         private bool _allLocationsNormal = true;
         private int _countNormal = 0;
         #endregion
@@ -121,6 +122,7 @@ namespace ATWebLogger.Core
             Timeout = int.Parse(prams[6].Split(':')[1].Trim());
             _sirenDeviceAdd = int.Parse(prams[7].Split(':')[1].Trim());
             _holdingRegisterSiren = int.Parse(prams[8].Split(':')[1].Trim());
+            _dataTypeAlarm = _holdingRegisterSiren.ToString().Substring(0, 1) == "4" ? "Word" : "Bool";
 
             Console.WriteLine($"MacId:{MACID}/Port:{PortName}/Baudrate:{BaudRate}/Databits:{DataBits}/Parity:{Parity}/StopBit:{Stopbits}/Timeout:{Timeout}");
             #endregion
@@ -236,14 +238,13 @@ namespace ATWebLogger.Core
             }
 
             Console.WriteLine("Khởi tạo USB3G");
+            GateWay.SMS.Port_USB3G = ReadText(PathFile + "comSMS.txt");
+            //GateWay.SMS.Port_USB3G = "COM12";
+            //GateWay.SMS.Khoitao();
+            Console.WriteLine($"Com SMS {GateWay.SMS.Port_USB3G}| Khoi Tao {GateWay.SMS.Khoitao()}");
+            Console.WriteLine("Khởi tạo USB3G thành công");
 
-            //GateWay.SMS.Port_USB3G = ReadText(PathFile + "comSMS.txt");
-            ////GateWay.SMS.Port_USB3G = "COM12";
-            ////GateWay.SMS.Khoitao();
-            //Console.WriteLine($"Com SMS {GateWay.SMS.Port_USB3G}| Khoi Tao {GateWay.SMS.Khoitao()}");
-            //Console.WriteLine("Khởi tạo USB3G thành công");
-
-            //GateWay.SMS.GuiSMS(SMSString, "Gui SMS test khi khoi tao");
+            //GateWay.SMS.GuiSMS(SMSString, "Gui SMS test khi khoi tao\nasdasdasdasda.");
 
             Console.WriteLine("Khởi tạo Modbus RTU Master");
             GateWay.ModbusRTUMaster.ResponseTimeout = Timeout;
@@ -375,7 +376,7 @@ namespace ATWebLogger.Core
                                 {
                                     DeviceId = _sirenDeviceAdd,
                                     Address = _holdingRegisterSiren,
-                                    DataType = "Word",
+                                    DataType = _dataTypeAlarm,
                                     Value = 1
                                 };
 
@@ -409,7 +410,7 @@ namespace ATWebLogger.Core
                                     {
                                         DeviceId = _sirenDeviceAdd,
                                         Address = _holdingRegisterSiren,
-                                        DataType = "Word",
+                                        DataType = _dataTypeAlarm,
                                         Value = 0
                                     };
 
@@ -430,7 +431,7 @@ namespace ATWebLogger.Core
 
                             }
 
-                            Console.WriteLine($"trang thai alarm: {locationAlarm.LocationName}-{locationAlarm.OnOff}-{locationAlarm.OnOffFlag}-{locationAlarm.AlarmType}");
+                            //Console.WriteLine($"trang thai alarm: {locationAlarm.LocationName}-{locationAlarm.OnOff}-{locationAlarm.OnOffFlag}-{locationAlarm.AlarmType}");
 
                             bool success = false;
                             int count = 0;
@@ -727,7 +728,6 @@ namespace ATWebLogger.Core
                                             default:
                                                 break;
                                         }
-
                                     }
                                     else
                                     {
@@ -747,12 +747,15 @@ namespace ATWebLogger.Core
                             location.Value = "Disable";
                             location.Status = "Disable";
                         }
+
                     }
                     catch (Exception ex)
                     {
                         Console.WriteLine($"Lỗi đọc modbus: {ex.Message}");
                     }
                     Thread.Sleep(500);
+
+                    Console.WriteLine($"{location.Name}:{location.Value}");
                 }
             }
         }
@@ -1458,7 +1461,7 @@ namespace ATWebLogger.Core
         {
             try
             {
-                string noidung = $"[{EmailFromInfo.Subject}]\n{DateTime.Now}\nLocation: {location.Name}\nAlarm: {alarm}\nValue: {location.Value}" +
+                string noidung = $"{EmailFromInfo.Subject}\n{DateTime.Now}\nLocation: {location.Name}\nAlarm: {alarm}\nValue: {location.Value}" +
                     $"\nLow Level: {(location.LowLevel.HasValue ? location.LowLevel.Value.ToString() : "")}" +
                     $"\nHigh Level: {(location.HighLevel.HasValue ? location.HighLevel.Value.ToString() : "")}";
                 Console.WriteLine($"SMS {noidung}");
@@ -1470,7 +1473,8 @@ namespace ATWebLogger.Core
                 //}
 
                 Console.WriteLine($"SDT {SMSString}");
-                Console.WriteLine($"Gui SMS {GateWay.SMS.GuiSMS(SMSString, noidung)}");
+                var smsResult = GateWay.SMS.GuiSMS(SMSString, noidung);
+                Console.WriteLine($"Gui SMS {smsResult}");
                 Console.WriteLine($"-----------------------------------------------------");
             }
             catch (Exception ex)
@@ -1504,6 +1508,7 @@ namespace ATWebLogger.Core
                 }
                 else if (address >= 1 && address <= 9999)
                 {
+                    address = address - 1;
                     type = "Coil";
                     if (value > 1 || value < 0)
                         return "Failed";
@@ -1992,7 +1997,7 @@ namespace ATWebLogger.Core
 
             string modbusRTUString = "MacAdd:" + MACID + "|Port:" + PortName + "|Baudrate:" + BaudRate.ToString()
                 + "|DataBit:" + DataBits.ToString() + "|Parity:" + Parity.ToString() + "|Stopbit:" + Stopbits.ToString()
-                + "|TimeOut:" + Timeout.ToString()+ $"|IdAddressSiren:{_sirenDeviceAdd}|HoldingSiren:{_holdingRegisterSiren}";
+                + "|TimeOut:" + Timeout.ToString() + $"|IdAddressSiren:{_sirenDeviceAdd}|HoldingSiren:{_holdingRegisterSiren}";
             WriteText(modbusRTUString.Trim(), PathFile + "Parametter.txt");
 
         }
