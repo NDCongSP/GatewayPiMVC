@@ -1,1 +1,1 @@
-MacAdd:CongPC|Port:COM7|Baudrate:9600|DataBit:8|Parity:0|Stopbit:1|TimeOut:1000
+MacAdd:CongPC|Port:COM19|Baudrate:9600|DataBit:8|Parity:0|Stopbit:1|TimeOut:1000

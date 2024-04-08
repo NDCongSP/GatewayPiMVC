@@ -65,7 +65,8 @@ namespace ATWebLogger.Core
         public Alarms Alarms { get; set; }
 
         //public string PathFile = $"D:\\ATPro\\CodeProject\\GatewayPi\\WeblogMVC\\SourceCode\\";
-        public string PathFile = @"C:\GatewayParametters\";
+        public string PathFile = $"D:\\MyCompany\\8.SourceCode\\3.Projects\\GatewayPiMVC\\SourceCode\\GatewayParametters\\";
+        //public string PathFile = @"C:\GatewayParametters\";
         //public string PathFile = $"/home/pi/";
 
         public double VotLo = 5;
