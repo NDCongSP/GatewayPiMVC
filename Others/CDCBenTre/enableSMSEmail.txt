@@ -1,0 +1,1 @@
+True,True,Databases,600,SSL Mode=None;user id=root;password=100100;database=gateway;server=192.168.1.253;convertzerodatetime=True;port=3306

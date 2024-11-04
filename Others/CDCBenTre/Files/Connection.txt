@@ -1,0 +1,1 @@
+Server =192.168.1.253 ; Database = ctybaokhoattytbentre; Port=3306;User ID=root ;Password=100100;charset=utf8
